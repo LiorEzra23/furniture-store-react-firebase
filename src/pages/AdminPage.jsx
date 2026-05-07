@@ -7,7 +7,6 @@ import {
   deleteProduct,
   listenToProducts,
   updateProduct,
-  uploadHeroImage,
   uploadProductImages,
 } from '../services/productsService';
 import { defaultSettings, saveSettings } from '../services/settingsService';
@@ -23,7 +22,6 @@ export default function AdminPage() {
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
-  const [heroImageFile, setHeroImageFile] = useState(null);
   const [settingsForm, setSettingsForm] = useState(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -56,10 +54,6 @@ export default function AdminPage() {
 
   function handleImagesChange(event) {
     setImageFiles(Array.from(event.target.files || []));
-  }
-
-  function handleHeroImageChange(event) {
-    setHeroImageFile(event.target.files?.[0] || null);
   }
 
   function removeExistingImage(indexToRemove) {
@@ -126,12 +120,7 @@ export default function AdminPage() {
     setSettingsMessage('');
 
     try {
-      const heroImageUrl = heroImageFile
-        ? await uploadHeroImage(heroImageFile)
-        : settingsForm.heroImageUrl;
-
-      await saveSettings({ ...settingsForm, heroImageUrl });
-      setHeroImageFile(null);
+      await saveSettings(settingsForm);
       setSettingsMessage('העיצוב נשמר בהצלחה');
     } catch (err) {
       console.error(err);
@@ -262,12 +251,12 @@ export default function AdminPage() {
 
           <label>תמונת רקע ראשית</label>
           <input
-            type="file"
-            accept="image/*"
-            onChange={handleHeroImageChange}
+            name="heroImageUrl"
+            value={settingsForm.heroImageUrl || ''}
+            onChange={handleSettingsChange}
+            placeholder="https://..."
+            type="url"
           />
-
-          {heroImageFile && <p>תמונה חדשה נבחרה: {heroImageFile.name}</p>}
 
           {settingsForm.heroImageUrl && (
             <div className="admin-hero-preview">

@@ -12,7 +12,7 @@ import {
 import { defaultSettings, saveSettings } from '../services/settingsService';
 import { useSettings } from '../context/SettingsContext';
 import { CATEGORY_OPTIONS, getCategoryLabel } from '../constants/categories';
-import { getValidMainImageIndex } from '../utils/productImages';
+import { getMainProductImage, getValidMainImageIndex } from '../utils/productImages';
 
 const emptyProduct = {
   title: '',
@@ -463,7 +463,9 @@ export default function AdminPage() {
         <div className="admin-products">
           {products.map((product) => (
             <div className="admin-product" key={product.id}>
-              {product.images?.[0] && <img src={product.images[0]} alt="" />}
+              {getMainProductImage(product) && (
+                <img src={getMainProductImage(product)} alt="" />
+              )}
 
               <div>
                 <strong>{product.title}</strong>

@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import ProductModal from './ProductModal';
+import { getCategoryLabel } from '../constants/categories';
+import { getMainProductImage } from '../utils/productImages';
 
 export default function ProductCard({ product, settings }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!product) return null;
 
-  const mainImage = product.images?.[0] || null;
+  const mainImage = getMainProductImage(product);
   const imageCount = product.images?.length || 0;
+  const categoryLabel = getCategoryLabel(product.category);
   const formattedPrice = product.price
     ? `₪${Number(product.price).toLocaleString('he-IL')}`
     : 'צרו קשר';
@@ -45,6 +48,8 @@ export default function ProductCard({ product, settings }) {
           <div className="product-title-row">
             <h3>{product.title}</h3>
           </div>
+
+          {categoryLabel && <span className="product-category">{categoryLabel}</span>}
 
           {product.description && (
             <p className="product-short-description">

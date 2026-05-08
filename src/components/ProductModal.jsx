@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { getValidMainImageIndex } from '../utils/productImages';
 
 export default function ProductModal({ product, settings, onClose }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(() =>
+    getValidMainImageIndex(product)
+  );
   const images = product.images || [];
   const currentImage = images[currentImageIndex] || null;
 

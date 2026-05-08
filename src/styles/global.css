@@ -355,6 +355,33 @@ img {
   font-weight: 400;
 }
 
+.category-filter {
+  max-width: 1180px;
+  margin: -18px auto 34px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.category-filter button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-filter button:hover,
+.category-filter button.active {
+  border-color: var(--primary);
+  background: rgba(212, 165, 116, 0.12);
+  color: var(--dark);
+}
+
 .products-grid {
   max-width: 1180px;
   margin: 0 auto;
@@ -546,6 +573,17 @@ img {
   font-weight: 700;
   color: var(--dark);
   word-wrap: break-word;
+}
+
+.product-category {
+  width: fit-content;
+  margin: -2px 0 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(212, 165, 116, 0.12);
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .product-content p,
@@ -946,6 +984,7 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -953,6 +992,10 @@ textarea {
   padding: 12px;
   font: inherit;
   background: white;
+}
+
+select {
+  cursor: pointer;
 }
 
 textarea {
@@ -1022,6 +1065,14 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.admin-image-item.selected-main {
+  border-color: var(--primary);
+  background: rgba(212, 165, 116, 0.1);
 }
 
 .admin-image-item img {
@@ -1029,6 +1080,34 @@ textarea {
   height: 90px;
   object-fit: cover;
   border-radius: 10px;
+}
+
+.admin-main-image-button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: white;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-image-item.selected-main .admin-main-image-button {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
+.admin-new-image-badge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .error {

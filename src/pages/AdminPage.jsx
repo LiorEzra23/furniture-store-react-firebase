@@ -11,8 +11,17 @@ import {
 } from '../services/productsService';
 import { defaultSettings, saveSettings } from '../services/settingsService';
 import { useSettings } from '../context/SettingsContext';
+import { CATEGORY_OPTIONS, getCategoryLabel } from '../constants/categories';
+import { getValidMainImageIndex } from '../utils/productImages';
 
-const emptyProduct = { title: '', description: '', price: '', images: [] };
+const emptyProduct = {
+  title: '',
+  description: '',
+  price: '',
+  category: '',
+  images: [],
+  mainImageIndex: 0,
+};
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -22,6 +31,7 @@ export default function AdminPage() {
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [settingsForm, setSettingsForm] = useState(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -45,6 +55,19 @@ export default function AdminPage() {
     setSettingsForm(settings);
   }, [settings]);
 
+  useEffect(() => {
+    const previews = imageFiles.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+
+    setImagePreviews(previews);
+
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [imageFiles]);
+
   function handleProductChange(event) {
     setProductForm((prev) => ({
       ...prev,
@@ -53,13 +76,37 @@ export default function AdminPage() {
   }
 
   function handleImagesChange(event) {
-    setImageFiles(Array.from(event.target.files || []));
+    const selectedFiles = Array.from(event.target.files || []);
+    setImageFiles(selectedFiles);
+
+    setProductForm((prev) => {
+      const nextImageCount = (prev.images?.length || 0) + selectedFiles.length;
+
+      return {
+        ...prev,
+        mainImageIndex:
+          Number(prev.mainImageIndex || 0) >= nextImageCount ? 0 : prev.mainImageIndex,
+      };
+    });
+  }
+
+  function setMainImage(index) {
+    setProductForm((prev) => ({
+      ...prev,
+      mainImageIndex: index,
+    }));
   }
 
   function removeExistingImage(indexToRemove) {
     setProductForm((prev) => ({
       ...prev,
       images: prev.images.filter((_, index) => index !== indexToRemove),
+      mainImageIndex:
+        prev.mainImageIndex === indexToRemove
+          ? 0
+          : prev.mainImageIndex > indexToRemove
+            ? prev.mainImageIndex - 1
+            : prev.mainImageIndex,
     }));
   }
 
@@ -67,6 +114,7 @@ export default function AdminPage() {
     setProductForm(emptyProduct);
     setEditingId(null);
     setImageFiles([]);
+    setImagePreviews([]);
     setError('');
   }
 
@@ -76,6 +124,10 @@ export default function AdminPage() {
     setError('');
 
     try {
+      if (!productForm.category) {
+        throw new Error('חובה לבחור קטגוריה למוצר');
+      }
+
       const uploadedImages =
         imageFiles.length > 0 ? await uploadProductImages(imageFiles) : [];
 
@@ -84,6 +136,8 @@ export default function AdminPage() {
         price: Number(productForm.price),
         images: [...(productForm.images || []), ...uploadedImages],
       };
+
+      payload.mainImageIndex = getValidMainImageIndex(payload);
 
       if (editingId) {
         await updateProduct(editingId, payload);
@@ -107,7 +161,9 @@ export default function AdminPage() {
       title: product.title || '',
       description: product.description || '',
       price: product.price || '',
+      category: product.category || '',
       images: product.images || [],
+      mainImageIndex: getValidMainImageIndex(product),
     });
     setImageFiles([]);
     setError('');
@@ -180,6 +236,21 @@ export default function AdminPage() {
             required
           />
 
+          <label>קטגוריה</label>
+          <select
+            name="category"
+            value={productForm.category}
+            onChange={handleProductChange}
+            required
+          >
+            <option value="">בחרו קטגוריה</option>
+            {CATEGORY_OPTIONS.map((category) => (
+              <option key={category.value} value={category.value}>
+                {category.label}
+              </option>
+            ))}
+          </select>
+
           <label>תמונות מהמחשב</label>
           <input
             type="file"
@@ -193,8 +264,22 @@ export default function AdminPage() {
               <p>תמונות קיימות</p>
               <div className="admin-image-preview">
                 {productForm.images.map((image, index) => (
-                  <div className="admin-image-item" key={image}>
+                  <div
+                    className={`admin-image-item ${
+                      index === Number(productForm.mainImageIndex || 0) ? 'selected-main' : ''
+                    }`}
+                    key={image}
+                  >
                     <img src={image} alt="" />
+                    <button
+                      type="button"
+                      className="admin-main-image-button"
+                      onClick={() => setMainImage(index)}
+                    >
+                      {index === Number(productForm.mainImageIndex || 0)
+                        ? 'תמונה ראשית'
+                        : 'הפוך לראשית'}
+                    </button>
                     <button
                       type="button"
                       className="btn danger"
@@ -209,7 +294,37 @@ export default function AdminPage() {
           )}
 
           {imageFiles.length > 0 && (
-            <p>{imageFiles.length} תמונות חדשות נבחרו</p>
+            <>
+              <p>תמונות חדשות לפני שמירה</p>
+              <div className="admin-image-preview">
+                {imagePreviews.map((preview, index) => {
+                  const finalIndex = (productForm.images?.length || 0) + index;
+
+                  return (
+                    <div
+                      className={`admin-image-item ${
+                        finalIndex === Number(productForm.mainImageIndex || 0)
+                          ? 'selected-main'
+                          : ''
+                      }`}
+                      key={`${preview.name}-${preview.url}`}
+                    >
+                      <img src={preview.url} alt="" />
+                      <span className="admin-new-image-badge">חדשה</span>
+                      <button
+                        type="button"
+                        className="admin-main-image-button"
+                        onClick={() => setMainImage(finalIndex)}
+                      >
+                        {finalIndex === Number(productForm.mainImageIndex || 0)
+                          ? 'תמונה ראשית'
+                          : 'הפוך לראשית'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {error && <p className="error">{error}</p>}
@@ -266,6 +381,27 @@ export default function AdminPage() {
               </a>
             </div>
           )}
+
+          <label>טקסט קטן מעל הקטלוג</label>
+          <input
+            name="catalogEyebrow"
+            value={settingsForm.catalogEyebrow || ''}
+            onChange={handleSettingsChange}
+          />
+
+          <label>כותרת הקטלוג</label>
+          <input
+            name="catalogTitle"
+            value={settingsForm.catalogTitle || ''}
+            onChange={handleSettingsChange}
+          />
+
+          <label>תיאור הקטלוג</label>
+          <textarea
+            name="catalogDescription"
+            value={settingsForm.catalogDescription || ''}
+            onChange={handleSettingsChange}
+          />
 
           <label>טלפון</label>
           <input
@@ -332,7 +468,9 @@ export default function AdminPage() {
               <div>
                 <strong>{product.title}</strong>
                 <p>₪{Number(product.price).toLocaleString('he-IL')}</p>
-                <small>{product.images?.length || 0} תמונות</small>
+                <small>
+                  {getCategoryLabel(product.category) || 'ללא קטגוריה'} · {product.images?.length || 0} תמונות
+                </small>
               </div>
 
               <button className="btn secondary" onClick={() => startEdit(product)}>

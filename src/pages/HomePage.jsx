@@ -1,15 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ProductCard from '../components/ProductCard';
 import { useSettings } from '../context/SettingsContext';
 import { listenToProducts } from '../services/productsService';
+import { CATEGORY_OPTIONS } from '../constants/categories';
 
 export default function HomePage() {
   const settings = useSettings();
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const heroImageUrl =
     settings.heroImageUrl ||
     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=2200&q=80';
+
+  const availableCategories = useMemo(() => {
+    const productCategories = new Set(products.map((product) => product.category).filter(Boolean));
+    return CATEGORY_OPTIONS.filter((category) => productCategories.has(category.value));
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'all') return products;
+    return products.filter((product) => product.category === selectedCategory);
+  }, [products, selectedCategory]);
 
   useEffect(() => {
     const unsubscribe = listenToProducts((nextProducts) => {
@@ -18,6 +30,15 @@ export default function HomePage() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (
+      selectedCategory !== 'all' &&
+      !availableCategories.some((category) => category.value === selectedCategory)
+    ) {
+      setSelectedCategory('all');
+    }
+  }, [availableCategories, selectedCategory]);
 
   return (
     <main>
@@ -75,10 +96,33 @@ export default function HomePage() {
 
       <section className="products-section" id="catalog">
         <div className="section-heading">
-          <span className="eyebrow">הקולקציה</span>
-          <h2>הקטלוג שלנו</h2>
-          <p>בחרו מוצר שמעניין אתכם, פתחו גלריה, ושלחו לנו הודעה לקבלת פרטים נוספים.</p>
+          <span className="eyebrow">{settings.catalogEyebrow}</span>
+          <h2>{settings.catalogTitle}</h2>
+          <p>{settings.catalogDescription}</p>
         </div>
+
+        {!productsLoading && availableCategories.length > 0 && (
+          <div className="category-filter" aria-label="סינון לפי קטגוריה">
+            <button
+              type="button"
+              className={selectedCategory === 'all' ? 'active' : ''}
+              onClick={() => setSelectedCategory('all')}
+            >
+              הכל
+            </button>
+
+            {availableCategories.map((category) => (
+              <button
+                type="button"
+                className={selectedCategory === category.value ? 'active' : ''}
+                onClick={() => setSelectedCategory(category.value)}
+                key={category.value}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {productsLoading ? (
           <div className="products-grid" aria-label="טוען מוצרים">
@@ -101,7 +145,7 @@ export default function HomePage() {
           <p className="empty-state">עדיין לא נוספו מוצרים.</p>
         ) : (
           <div className="products-grid">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} settings={settings} />
             ))}
           </div>

@@ -25,6 +25,8 @@ export function listenToProducts(callback) {
       id: item.id,
       ...item.data(),
       images: item.data().images || [],
+      category: item.data().category || '',
+      mainImageIndex: item.data().mainImageIndex || 0,
     }));
 
     callback(products);
@@ -45,6 +47,8 @@ export async function getProduct(id) {
     id: snapshot.id,
     ...data,
     images: data.images || [],
+    category: data.category || '',
+    mainImageIndex: data.mainImageIndex || 0,
   };
 }
 
@@ -100,10 +104,16 @@ export async function uploadHeroImage(file) {
 // CREATE
 // =====================
 export async function createProduct(product) {
+  if (!product.category) {
+    throw new Error('Product category is required');
+  }
+
   return addDoc(productsRef, {
     title: product.title,
     description: product.description,
     price: Number(product.price),
+    category: product.category || '',
+    mainImageIndex: Number(product.mainImageIndex || 0),
     images: product.images || [], 
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -114,10 +124,16 @@ export async function createProduct(product) {
 // UPDATE
 // =====================
 export async function updateProduct(id, product) {
+  if (!product.category) {
+    throw new Error('Product category is required');
+  }
+
   return updateDoc(doc(db, 'products', id), {
     title: product.title,
     description: product.description,
     price: Number(product.price),
+    category: product.category || '',
+    mainImageIndex: Number(product.mainImageIndex || 0),
     images: product.images || [],
     updatedAt: serverTimestamp(),
   });

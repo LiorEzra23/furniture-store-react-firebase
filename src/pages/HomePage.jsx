@@ -22,8 +22,6 @@ export default function HomePage() {
   return (
     <main>
       <header className="site-header">
-        <a href="/admin" className="admin-link">כניסת מנהל</a>
-
         <a href="/" className="brand">
           <span>{settings.storeName}</span>
         </a>
